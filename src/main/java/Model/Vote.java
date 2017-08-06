@@ -2,19 +2,29 @@ package Model;
 
 public class Vote {
     private String candidateId;
-    private String userId;
+    private User user;
+    private String userID;
 
-    public Vote(String candidateId, String userId) {
+    public Vote(String candidateId, User user) {
         this.candidateId = candidateId;
-        this.userId = userId;
+        this.user = user;
     }
 
-    public String getUserId() {
-        return userId;
+    public Vote(String candidateId, String userID) {
+        this.candidateId = candidateId;
+        this.userID = userID;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public String getUserID() {
+        return userID;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
 
