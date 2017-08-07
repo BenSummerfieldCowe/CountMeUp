@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 public class CountMeUpTests {
@@ -55,7 +58,7 @@ public class CountMeUpTests {
                 String candidate =Integer.toString((int) (1+ Math.random() * 5));
                 user.vote(candidate);
                 //Store the correct value
-                if(k<4) {
+                if(k<3) {
                     validVotes.merge(candidate, 1, Integer::sum);
                 }
             }
@@ -66,8 +69,37 @@ public class CountMeUpTests {
     }
 
     @Test
-    public void countMeUpReturnsAccurateVotesForSimpleSetSampleForUsers() {
-      //   = new HashMap<>();
+    public void attomicTest() {
+        AtomicInteger blah = new AtomicInteger();
+      //  blah.set(0);
+        Map<String, AtomicInteger> map = new ConcurrentHashMap<>();
+        map.put("1",blah);
+        System.out.println(map.get("1"));
+        map.get("1").getAndIncrement();
+        System.out.println(map.get("1"));
+    }
+    @Test
+    public void countMeUpReturnsAccurateVotesForSimpleSetSampleForUsersAtomic()
+            throws ExecutionException, InterruptedException {
+        VoteTestObject voteTestObject= generateUsers();
+        List<UserOther> users = voteTestObject.getUnsortedVotes();
+        Map<String, Integer> castVotes = voteTestObject.getResults();
+        List<String> candidates = new ArrayList<>();
+        candidates.add("1");
+        candidates.add("2");
+        candidates.add("3");
+        candidates.add("4");
+        candidates.add("5");
+        CountMeUp countMeUp = new CountMeUp(candidates);
+        long startTime = System.nanoTime();
+        Map<String, AtomicInteger> results = countMeUp.countForUserAtomic(users);
+        long endTime = System.nanoTime();
+        System.out.println((endTime - startTime) / 1000000);
+        castVotes.keySet().forEach(k -> assertEquals("Values different for candidate " + k, castVotes.get(k).intValue(), results.get(k).get()));
+    }
+
+    public void countMeUpReturnsAccurateVotesForSimpleSetSampleForUsers()
+            throws ExecutionException, InterruptedException {
         VoteTestObject voteTestObject= generateUsers();
         List<UserOther> users = voteTestObject.getUnsortedVotes();
         Map<String, Integer> castVotes = voteTestObject.getResults();
@@ -79,17 +111,17 @@ public class CountMeUpTests {
         castVotes.keySet().forEach(k -> assertEquals("Values different for candidate " + k, castVotes.get(k), results.get(k)));
     }
 
-//    public List<Vote> generateVotesWithValidVotes(Map<String,Integer> voteAmount) {
-//        List<Vote> votes = new ArrayList<Vote>();
-//        int j =0;
-//        voteAmount.forEach((k,v) -> {
-//            for(int i=0; i < voteAmount.get(k); i++) {
-//                votes.add(new Vote(k,k+Integer.toString(i)));
-////                        j++;
-//            }
-//        });
-//        return votes;
-//    }
+    public List<Vote> generateVotesWithValidVotesUserId(Map<String,Integer> voteAmount) {
+        List<Vote> votes = new ArrayList<Vote>();
+        int j =0;
+        voteAmount.forEach((k,v) -> {
+            for(int i=0; i < voteAmount.get(k); i++) {
+                votes.add(new Vote(k,k+Integer.toString(i)));
+//                        j++;
+            }
+        });
+        return votes;
+    }
 
     @Test
     public void countMeUpReturnsAccurateVotesForSimpleSetSample() {
@@ -104,8 +136,9 @@ public class CountMeUpTests {
         castVotes.put("3", 2000000);
         castVotes.put("4", 2500000);
         castVotes.put("5", 4000000);
-        List<Vote> votes=   generateVotesWithValidVotes(castVotes);
-//        votes.add(new Vote("1",new User("11")));
+//        List<Vote> votes=   generateVotesWithValidVotes(castVotes);
+        List<Vote> votes=   generateVotesWithValidVotesUserId(castVotes);
+//       votes.add(new Vote("1",new User("11")));
         List<String> candidates = new ArrayList<>();
         candidates.add("1");
         candidates.add("2");
@@ -120,28 +153,28 @@ public class CountMeUpTests {
         castVotes.keySet().forEach(k -> assertEquals("Values different for candidate " + k, castVotes.get(k), results.get(k)));
     }
 
-    @Test
-    public void countMeUpReturnsAccurateVotesForSimpleRandomSample() {
-        Map<String, Integer> castVotes = new HashMap<>();
-        castVotes.put("1", (int) (Math.random()*1000));
-        castVotes.put("2", (int) (Math.random()*1000));
-        castVotes.put("3", (int) (Math.random()*1000));
-        castVotes.put("4", (int) (Math.random()*1000));
-        castVotes.put("5", (int) (Math.random()*1000));
-        List<Vote> votes=   generateVotesWithValidVotes(castVotes);
-        List<String> candidates = new ArrayList<String>();
-        candidates.add("1");
-        candidates.add("2");
-        candidates.add("3");
-        candidates.add("4");
-        candidates.add("5");
-        CountMeUp countMeUp = new CountMeUp(candidates);
-        long startTime = System.nanoTime();
-        Map<String, Integer> results = countMeUp.count(votes);
-        long endTime = System.nanoTime();
-        System.out.println((endTime - startTime)/1000000);
-        castVotes.keySet().forEach(k -> assertEquals("Values different for candidate " + k, castVotes.get(k), results.get(k)));
-    }
+//    @Test
+//    public void countMeUpReturnsAccurateVotesForSimpleRandomSample() {
+//        Map<String, Integer> castVotes = new HashMap<>();
+//        castVotes.put("1", (int) (Math.random()*1000));
+//        castVotes.put("2", (int) (Math.random()*1000));
+//        castVotes.put("3", (int) (Math.random()*1000));
+//        castVotes.put("4", (int) (Math.random()*1000));
+//        castVotes.put("5", (int) (Math.random()*1000));
+//        List<Vote> votes=   generateVotesWithValidVotes(castVotes);
+//        List<String> candidates = new ArrayList<String>();
+//        candidates.add("1");
+//        candidates.add("2");
+//        candidates.add("3");
+//        candidates.add("4");
+//        candidates.add("5");
+//        CountMeUp countMeUp = new CountMeUp(candidates);
+//        long startTime = System.nanoTime();
+//        Map<String, Integer> results = countMeUp.count(votes);
+//        long endTime = System.nanoTime();
+//        System.out.println((endTime - startTime)/1000000);
+//        castVotes.keySet().forEach(k -> assertEquals("Values different for candidate " + k, castVotes.get(k), results.get(k)));
+//    }
 
 
 
